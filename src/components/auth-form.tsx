@@ -86,7 +86,7 @@ export default function AuthForm({
     <div className="flex min-h-full flex-1 items-center justify-center">
       <div className="w-full max-w-sm space-y-6">
         <h1 className="text-center text-2xl font-semibold">{title}</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
           {errors.general && (
             <p className="text-sm text-red-600 dark:text-red-400" aria-live="polite">
               {errors.general}

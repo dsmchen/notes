@@ -65,6 +65,7 @@ When asked to create a personal notes app with markdown support using Next.js + 
 
 #### Nice to have
 
+- Auth flow: signup email confirmation, strong password requirement
 - Add image uploads to notes (using Supabase Storage)
 - Implement note categories with a `tags` table
 - Pin important notes to the top of the list
@@ -75,9 +76,10 @@ When asked to create a personal notes app with markdown support using Next.js + 
 
 1. **Scaffold project** — `create-next-app` with TypeScript and Tailwind CSS, install `@supabase/supabase-js`, `@supabase/ssr`, `react-markdown`, and `@uiw/react-md-editor`
 2. **Set up Supabase** — create project, enable email/password auth, create `notes` table with `id` (uuid PK), `user_id` (FK to `auth.users`), `title` (text), `content` (text), `created_at` (timestamptz), `deleted_at` (nullable timestamptz for soft delete)
-3. **Add auth flow** — login/signup pages using `@supabase/ssr`, protect routes with middleware
+3. **Add auth flow** — login/signup pages using `@supabase/ssr`, protect routes with middleware, password change and forgot-password flows
 4. **Implement notes list** — Server Component that fetches `notes WHERE user_id = current_user AND deleted_at IS NULL`, ordered by `created_at DESC`
 5. **Build note editor** — Client Component with `@uiw/react-md-editor`, auto-save on debounced input changes via Supabase upsert
 6. **Add real-time sync** — subscribe to `notes` table changes via Supabase Realtime, update UI on insert/update/delete
 7. **Implement full-text search** — use Supabase `pgweb` full-text search or `ilike` query on `title` and `content`
 8. **Add trash view** — fetch soft-deleted notes, allow restore (set `deleted_at = NULL`) or permanent delete
+9. **Add delete account functionality**

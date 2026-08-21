@@ -42,9 +42,8 @@ test.describe("Forgot password flow", () => {
 
     await page.evaluate(
       async ({ accessToken, refreshToken, url, key }) => {
-        const { createBrowserClient } = await import(
-          "https://esm.sh/@supabase/ssr@0.12.0"
-        );
+        // @ts-expect-error dynamic import for browser context
+        const { createBrowserClient } = await import("https://esm.sh/@supabase/ssr@0.12.0");
         const supabase = createBrowserClient(url, key);
         const { error } = await supabase.auth.setSession({
           access_token: accessToken,

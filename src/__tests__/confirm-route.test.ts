@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 vi.mock("@/utils/supabase/server", () => ({
   createClient: vi.fn(),
@@ -16,9 +17,9 @@ function makeRequest(params: Record<string, string>) {
   return new NextRequest(url);
 }
 
-type MockSupabaseClient = {
-  auth: { verifyOtp: ReturnType<typeof vi.fn> };
-};
+function mockSupabase(overrides: Record<string, unknown>) {
+  return overrides as unknown as SupabaseClient;
+}
 
 describe("/auth/confirm GET", () => {
   beforeEach(() => {
@@ -27,9 +28,9 @@ describe("/auth/confirm GET", () => {
 
   it("redirects to next path on successful verification", async () => {
     const mockVerifyOtp = vi.fn().mockResolvedValue({ error: null });
-    vi.mocked(createClient).mockResolvedValue({
-      auth: { verifyOtp: mockVerifyOtp },
-    } as MockSupabaseClient);
+    vi.mocked(createClient).mockResolvedValue(
+      mockSupabase({ auth: { verifyOtp: mockVerifyOtp } }),
+    );
 
     const request = makeRequest({
       token_hash: "abc123",
@@ -47,9 +48,9 @@ describe("/auth/confirm GET", () => {
   });
 
   it("redirects to / on successful verification when no next param", async () => {
-    vi.mocked(createClient).mockResolvedValue({
-      auth: { verifyOtp: vi.fn().mockResolvedValue({ error: null }) },
-    } as MockSupabaseClient);
+    vi.mocked(createClient).mockResolvedValue(
+      mockSupabase({ auth: { verifyOtp: vi.fn().mockResolvedValue({ error: null }) } }),
+    );
 
     const request = makeRequest({ token_hash: "abc123", type: "recovery" });
     const response = await GET(request);
@@ -57,9 +58,9 @@ describe("/auth/confirm GET", () => {
   });
 
   it("redirects to /login?error=auth when verification fails", async () => {
-    vi.mocked(createClient).mockResolvedValue({
-      auth: { verifyOtp: vi.fn().mockResolvedValue({ error: "Invalid token" }) },
-    } as MockSupabaseClient);
+    vi.mocked(createClient).mockResolvedValue(
+      mockSupabase({ auth: { verifyOtp: vi.fn().mockResolvedValue({ error: "Invalid token" }) } }),
+    );
 
     const request = makeRequest({
       token_hash: "bad-token",
@@ -87,9 +88,9 @@ describe("/auth/confirm GET", () => {
 
   it("handles recovery type for password reset", async () => {
     const mockVerifyOtp = vi.fn().mockResolvedValue({ error: null });
-    vi.mocked(createClient).mockResolvedValue({
-      auth: { verifyOtp: mockVerifyOtp },
-    } as MockSupabaseClient);
+    vi.mocked(createClient).mockResolvedValue(
+      mockSupabase({ auth: { verifyOtp: mockVerifyOtp } }),
+    );
 
     const request = makeRequest({
       token_hash: "reset-token",

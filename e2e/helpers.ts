@@ -1,6 +1,10 @@
-import { type Page, expect } from "@playwright/test";
+import { type Page, expect, APIRequestContext } from "@playwright/test";
 
 const TEST_PASSWORD = "test-password-123";
+
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 export function uniqueEmail(): string {
   const ts = Date.now();
@@ -27,4 +31,81 @@ export async function login(page: Page, email: string, password = TEST_PASSWORD)
 export async function logout(page: Page) {
   await page.getByRole("button", { name: "Sign out" }).click();
   await expect(page).toHaveURL("/login");
+}
+
+export async function generateRecoveryToken(
+  request: APIRequestContext,
+  email: string,
+): Promise<string> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+  const response = await fetch(
+    `${supabaseUrl}/auth/v1/admin/generate_link`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${serviceKey}`,
+        apikey: anonKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        type: "recovery",
+        redirect_to: "http://localhost:3000/update-password",
+      }),
+    },
+  );
+
+  const status = response.status;
+  const text = await response.text();
+
+  if (status !== 200) {
+    throw new Error(`generate_link returned ${status}: ${text.slice(0, 200)}`);
+  }
+
+  const body = JSON.parse(text);
+
+  if (!body.hashed_token) {
+    throw new Error(`No hashed_token in response`);
+  }
+
+  return body.hashed_token;
+}
+
+export async function verifyRecoveryAndGetSession(
+  request: APIRequestContext,
+  tokenHash: string,
+): Promise<{ access_token: string; refresh_token: string }> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+  const response = await fetch(
+    `${supabaseUrl}/auth/v1/verify`,
+    {
+      method: "POST",
+      headers: {
+        apikey: anonKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        token_hash: tokenHash,
+        type: "recovery",
+      }),
+    },
+  );
+
+  const status = response.status;
+  const text = await response.text();
+
+  if (status !== 200) {
+    throw new Error(`verify returned ${status}: ${text.slice(0, 200)}`);
+  }
+
+  const body = JSON.parse(text);
+  return {
+    access_token: body.access_token,
+    refresh_token: body.refresh_token,
+  };
 }

@@ -25,7 +25,8 @@ export async function login(page: Page, email: string, password = TEST_PASSWORD)
 }
 
 export async function logout(page: Page) {
-  await page.getByRole("button", { name: "Sign out" }).click();
+  await page.getByLabel("User menu").click();
+  await page.getByRole("menuitem", { name: "Sign out" }).click();
   await expect(page).toHaveURL("/login");
 }
 

@@ -30,6 +30,44 @@ export async function logout(page: Page) {
   await expect(page).toHaveURL("/login");
 }
 
+export async function getUserId(page: Page): Promise<string> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  return page.evaluate(
+    async ({ url, key }) => {
+      // @ts-expect-error esm.sh import not resolvable by tsc
+      const { createBrowserClient } = await import("https://esm.sh/@supabase/ssr@0.12.0");
+      const supabase = createBrowserClient(url, key);
+      const { data } = await supabase.auth.getUser();
+      return data.user!.id;
+    },
+    { url, key },
+  );
+}
+
+export async function createNote(
+  request: APIRequestContext,
+  userId: string,
+  { title, content }: { title: string; content: string },
+) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+  const response = await request.post(`${supabaseUrl}/rest/v1/notes`, {
+    headers: {
+      Authorization: `Bearer ${serviceKey}`,
+      apikey: serviceKey,
+      "Content-Type": "application/json",
+      Prefer: "return=representation",
+    },
+    data: { title, content, user_id: userId },
+  });
+
+  if (!response.ok()) {
+    throw new Error(`createNote failed: ${response.status()} ${await response.text()}`);
+  }
+}
+
 export async function generateRecoveryToken(
   request: APIRequestContext,
   email: string,
